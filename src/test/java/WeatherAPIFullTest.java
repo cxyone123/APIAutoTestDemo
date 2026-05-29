@@ -4,33 +4,33 @@ import org.testng.Assert;
 import org.testng.annotations.Test;
 import io.qameta.allure.Description;
 import io.qameta.allure.Feature;
+import org.testng.annotations.DataProvider;
 @Feature("天气API测试")
 public class WeatherAPIFullTest {
 
     // ========== 正向测试 ==========
-
-    @Test
-    @Description("验证厦门天气查询，状态码200且返回current_weather字段")
-    public void TC01_厦门天气() {
-        Response response = RestAssured.get("https://api.open-meteo.com/v1/forecast?latitude=24.48&longitude=118.08&current_weather=true");
-        Assert.assertEquals(response.getStatusCode(), 200);
-        Assert.assertTrue(response.asString().contains("current_weather"));
+    @DataProvider(name = "cityData")
+    public Object[][] cityData() {
+        return new Object[][] {
+                {"厦门", "24.48", "118.08"},
+                {"北京", "39.90", "116.40"},
+                {"上海", "31.23", "121.47"},
+        };
     }
+    @Test(dataProvider = "cityData")
+    @Description("数据驱动测试：验证不同城市的天气查询，状态码200且返回current_weather")
+    public void TC_多城市天气查询(String cityName, String latitude, String longitude) {
+        String url = "https://api.open-meteo.com/v1/forecast?latitude=" + latitude + "&longitude=" + longitude + "&current_weather=true";
 
-    @Test
-    @Description("验证北京天气查询，状态码200且返回current_weather字段")
-    public void TC02_北京天气() {
-        Response response = RestAssured.get("https://api.open-meteo.com/v1/forecast?latitude=39.90&longitude=116.40&current_weather=true");
-        Assert.assertEquals(response.getStatusCode(), 200);
-        Assert.assertTrue(response.asString().contains("current_weather"));
-    }
+        Response response = RestAssured.get(url);
 
-    @Test
-    @Description("验证上海天气查询，状态码200且返回current_weather字段")
-    public void TC03_上海天气() {
-        Response response = RestAssured.get("https://api.open-meteo.com/v1/forecast?latitude=31.23&longitude=121.47&current_weather=true");
-        Assert.assertEquals(response.getStatusCode(), 200);
-        Assert.assertTrue(response.asString().contains("current_weather"));
+        Assert.assertEquals(response.getStatusCode(), 200,
+                cityName + "状态码应为200");
+
+        Assert.assertTrue(response.asString().contains("current_weather"),
+                cityName + "天气数据应包含current_weather");
+
+        System.out.println(cityName + "天气查询通过 ✓");
     }
 
     @Test
@@ -51,19 +51,23 @@ public class WeatherAPIFullTest {
     // ========== 负向测试 ==========
 
     @Test
-    @Description("负向测试：纬度超范围(999)时不返回current_weather字段")
+    @Description("负向测试：纬度超范围(999)时返回错误信息，不返回天气数据")
     public void TC05_纬度超范围() {
         Response response = RestAssured.get("https://api.open-meteo.com/v1/forecast?latitude=999&longitude=118.08&current_weather=true");
-        Assert.assertEquals(response.getStatusCode(), 200);
+
+        Assert.assertEquals(response.getStatusCode(), 400);
+        Assert.assertTrue(response.asString().contains("error"), "应返回错误信息");
         Assert.assertFalse(response.asString().contains("current_weather"), "参数错误时不应返回天气数据");
     }
 
     @Test
-    @Description("负向测试：纬度负超范围(-999)时不返回current_weather字段")
+    @Description("负向测试：纬度负超范围(-999)时返回错误信息，不返回天气数据")
     public void TC06_纬度负超范围() {
         Response response = RestAssured.get("https://api.open-meteo.com/v1/forecast?latitude=-999&longitude=118.08&current_weather=true");
-        Assert.assertEquals(response.getStatusCode(), 200);
-        Assert.assertNull(response.jsonPath().get("current_weather"), "参数错误时不应返回天气数据");
+
+        Assert.assertEquals(response.getStatusCode(), 400);
+        Assert.assertTrue(response.asString().contains("error"), "应返回错误信息");
+        Assert.assertFalse(response.asString().contains("current_weather"), "参数错误时不应返回天气数据");
     }
 
     @Test
