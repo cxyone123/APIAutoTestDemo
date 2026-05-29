@@ -20,6 +20,12 @@
             <version>5.5.1</version>
             <scope>test</scope>
         </dependency>
+            <!-- Allure测试报告框架 -->
+        <dependency>
+            <groupId>io.qameta.allure</groupId>
+            <artifactId>allure-testng</artifactId>
+            <version>2.29.0</version>
+        </dependency>
         <dependency>
             <groupId>org.testng</groupId>
             <artifactId>testng</artifactId>
